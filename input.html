@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Input Parameters</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #e0e0e0, #c0c0c0);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 0;
+      margin: 0;
+      color: #333;
+    }
+    .card {
+      background: white;
+      padding: 2rem;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      text-align: center;
+      max-width: 800px;
+      width: 90%;
+      margin-bottom: 2rem;
+    }
+    h2 {
+      color: #2a9d8f;
+      margin-bottom: 1.5rem;
+      font-size: 2rem;
+    }
+    .input-group {
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+    button {
+      background: #2a9d8f;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      font-size: 1.1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 1rem;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    button:hover {
+      background: #21867a;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+    }
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+    th {
+      background-color: #2a9d8f;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    .icon {
+      font-size: 2.5rem;
+      color: #2a9d8f;
+      margin-bottom: 1rem;
+    }
+    .time-input {
+      position: relative;
+    }
+    .time-input::after {
+      content: "msec.";
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">
+      <i class="fas fa-keyboard"></i>
+    </div>
+    <h2>Enter Simulation Parameters</h2>
+    
+    <div class="input-group">
+      <label for="numProcs">Number of Processes (Max 15):</label>
+      <input type="number" id="numProcs" min="1" max="15" value="5">
+    </div>
+    
+    <div class="input-group">
+      <label for="quantum">Quantum Time (msec):</label>
+      <div class="time-input">
+        <input type="number" id="quantum" step="0.1" min="0.1" value="2">
+      </div>
+    </div>
+    
+    <button onclick="generateTable()">
+      <i class="fas fa-table"></i> Generate Process Table
+    </button>
+  </div>
+
+  <div class="card" id="processTableCard" style="display: none;">
+    <div class="icon">
+      <i class="fas fa-tasks"></i>
+    </div>
+    <h2>Enter Process Details</h2>
+    <div id="tableSection"></div>
+    <button onclick="submitProcesses()">
+      <i class="fas fa-play"></i> Run Simulation
+    </button>
+  </div>
+
+  <script>
+    function generateTable() {
+      const numProcs = parseInt(document.getElementById('numProcs').value);
+      const quantum = parseFloat(document.getElementById('quantum').value);
+      
+      if (isNaN(numProcs) || numProcs < 1 || numProcs > 15) {
+        alert('Please enter a valid number of processes (1-15)');
+        return;
+      }
+      
+      if (isNaN(quantum) || quantum <= 0) {
+        alert('Please enter a valid quantum time (>0)');
+        return;
+      }
+      
+      let tableHTML = `
+        <table>
+          <tr>
+            <th>Process</th>
+            <th>Arrival Time (msec)</th>
+            <th>Burst Time (msec)</th>
+          </tr>`;
+      
+      for (let i = 0; i < numProcs; i++) {
+        tableHTML += `
+          <tr>
+            <td>P${i+1}</td>
+            <td><div class="time-input"><input type="number" id="at${i}" min="0" step="0.1" value="0"></div></td>
+            <td><div class="time-input"><input type="number" id="bt${i}" min="0.1" step="0.1" value=""></div></td>
+          </tr>`;
+      }
+      
+      tableHTML += `</table>`;
+      document.getElementById('tableSection').innerHTML = tableHTML;
+      document.getElementById('processTableCard').style.display = 'block';
+    }
+    
+    function submitProcesses() {
+      const numProcs = parseInt(document.getElementById('numProcs').value);
+      const quantum = parseFloat(document.getElementById('quantum').value);
+      const processData = [];
+      let valid = true;
+      
+      for (let i = 0; i < numProcs; i++) {
+        const at = parseFloat(document.getElementById(`at${i}`).value) || 0;
+        const bt = parseFloat(document.getElementById(`bt${i}`).value);
+        
+        if (isNaN(bt) || bt <= -1) {
+          alert(`Please enter valid burst time for P${i+1}`);
+          valid = false;
+          break;
+        }
+        
+        processData.push({
+          id: `P${i+1}`,
+          at: at,
+          bt: bt
+        });
+      }
+      
+      if (valid) {
+        // Save data to localStorage for results page
+        localStorage.setItem('processData', JSON.stringify(processData));
+        localStorage.setItem('quantum', quantum.toString());
+        
+        // Redirect to results page
+        window.location.href = 'results.html';
+      }
+    }
+  </script>
+</body>
+</html>

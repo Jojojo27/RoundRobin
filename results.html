@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Round Robin Results</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #c0c0c0, #a0a0a0);
+      margin: 0;
+      padding: 0;
+      color: #333;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    .slides-container {
+      display: flex;
+      height: 100vh;
+      width: 100%;
+      transition: transform 0.5s ease;
+    }
+
+    .slide {
+      min-width: 100%;
+      height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide-content {
+      background: rgba(255,255,255,0.9);
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      max-width: 900px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: #2a9d8f;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+    }
+
+    .gantt-chart {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 20px 0;
+    }
+
+    .gantt-processes {
+      display: flex;
+      border-bottom: 2px solid #333;
+      padding-bottom: 5px;
+    }
+
+    .gantt-process {
+      padding: 10px 20px;
+      text-align: center;
+      border-right: 1px solid #ddd;
+      background: #f9f9f9;
+      font-weight: bold;
+      min-width: 50px;
+    }
+
+    .gantt-times {
+      display: flex;
+      margin-top: 5px;
+    }
+
+    .gantt-time {
+      padding: 5px 20px;
+      text-align: center;
+      font-size: 0.9em;
+      min-width: 50px;
+    }
+
+    .calculation {
+      background: #f8f8f8;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-family: 'Courier New', monospace;
+    }
+
+    .answer {
+      background-color: #000;
+      color: white;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #2a9d8f;
+      color: white;
+    }
+
+    .nav-buttons {
+      position: fixed;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .nav-btn {
+      background: #2a9d8f;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .nav-btn:hover {
+      background: #21867a;
+      transform: translateY(-2px);
+    }
+
+    .slide-indicators {
+      position: fixed;
+      bottom: 70px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ccc;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .indicator.active {
+      background: #2a9d8f;
+    }
+
+    .summary-item {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="slides-container" id="slidesContainer">
+    <!-- Slide 1: Gantt Chart -->
+    <div class="slide">
+      <div class="slide-content">
+        <h1><i class="fas fa-project-diagram"></i> Gantt Chart</h1>
+        <div class="gantt-chart">
+          <div class="gantt-processes" id="ganttProcesses"></div>
+          <div class="gantt-times" id="ganttTimes"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 2: Waiting Time -->
+    <div class="slide">
+      <div class="slide-content">
+        <h1><i class="fas fa-clock"></i> Waiting Time Calculation</h1>
+        <div id="waitingTimeCalc"></div>
+      </div>
+    </div>
+
+    <!-- Slide 3: Completion Time -->
+    <div class="slide">
+      <div class="slide-content">
+        <h1><i class="fas fa-flag-checkered"></i> Completion Time</h1>
+        <div id="completionTime"></div>
+      </div>
+    </div>
+
+    <!-- Slide 4: Turnaround Time -->
+    <div class="slide">
+      <div class="slide-content">
+        <h1><i class="fas fa-exchange-alt"></i> Turnaround Time</h1>
+        <div id="turnaroundTime"></div>
+      </div>
+    </div>
+
+    <!-- Slide 5: Summary -->
+    <div class="slide">
+      <div class="slide-content">
+        <h1><i class="fas fa-list-alt"></i> Summary of Results</h1>
+        <div id="summaryResults"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-indicators" id="slideIndicators"></div>
+
+  <div class="nav-buttons">
+    <button class="nav-btn" id="prevBtn"><i class="fas fa-arrow-left"></i> Previous</button>
+    <button class="nav-btn" id="nextBtn">Next <i class="fas fa-arrow-right"></i></button>
+    <button class="nav-btn" onclick="window.location.href='input.html'"><i class="fas fa-redo"></i> Run Again</button>
+  </div>
+
+  <script>
+    // Slide management
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const slideIndicators = document.getElementById('slideIndicators');
+    
+    // Create indicators
+    for (let i = 0; i < totalSlides; i++) {
+      const indicator = document.createElement('div');
+      indicator.className = 'indicator';
+      if (i === 0) indicator.classList.add('active');
+      indicator.addEventListener('click', () => goToSlide(i));
+      slideIndicators.appendChild(indicator);
+    }
+
+    document.getElementById('prevBtn').addEventListener('click', () => {
+      if (currentSlide > 0) goToSlide(currentSlide - 1);
+    });
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      if (currentSlide < totalSlides - 1) goToSlide(currentSlide + 1);
+    });
+
+    function goToSlide(slideIndex) {
+      currentSlide = slideIndex;
+      document.getElementById('slidesContainer').style.transform = `translateX(-${slideIndex * 100}%)`;
+      
+      // Update indicators
+      document.querySelectorAll('.indicator').forEach((ind, idx) => {
+        ind.classList.toggle('active', idx === slideIndex);
+      });
+    }
+
+    // Round Robin Algorithm and Results Display
+    document.addEventListener('DOMContentLoaded', function() {
+      const processData = JSON.parse(localStorage.getItem('processData'));
+      const quantum = parseFloat(localStorage.getItem('quantum'));
+      
+      if (!processData || isNaN(quantum)) {
+        alert('Invalid data. Please start over.');
+        window.location.href = 'input.html';
+        return;
+      }
+
+      // Sort processes by ID to ensure P1, P2, P3 sequence
+      processData.sort((a, b) => parseInt(a.id.substring(1)) - parseInt(b.id.substring(1)));
+      
+      const results = roundRobin(processData, quantum);
+      displayResults(results);
+    });
+
+    function roundRobin(processData, quantum) {
+      const processes = processData.map(p => ({
+        id: p.id,
+        burstTime: parseFloat(p.bt),
+        arrivalTime: parseFloat(p.at) || 0,
+        remainingTime: parseFloat(p.bt),
+        completionTime: 0,
+        turnaroundTime: 0,
+        waitingTime: 0,
+        executionSteps: [],
+        executed: false
+      }));
+
+      const ganttChart = [];
+      const queue = [];
+      let time = 0;
+      let completed = 0;
+      let currentProcess = null;
+
+      // Sort processes by arrival time (and then by ID if same arrival time)
+      processes.sort((a, b) => {
+        if (a.arrivalTime === b.arrivalTime) {
+          return parseInt(a.id.substring(1)) - parseInt(b.id.substring(1));
+        }
+        return a.arrivalTime - b.arrivalTime;
+      });
+
+      while (completed < processes.length) {
+        // Add arriving processes to queue
+        for (const p of processes) {
+          if (!p.executed && p.arrivalTime <= time && !queue.includes(p)) {
+            queue.push(p);
+          }
+        }
+
+        // If current process is done, remove it
+        if (currentProcess && currentProcess.remainingTime <= 0) {
+          currentProcess.completionTime = time;
+          currentProcess.turnaroundTime = currentProcess.completionTime - currentProcess.arrivalTime;
+          currentProcess.waitingTime = calculateWaitingTime(currentProcess);
+          currentProcess.executed = true;
+          completed++;
+          currentProcess = null;
+        }
+
+        // If no process is running, pick next from queue
+        if (!currentProcess && queue.length > 0) {
+          currentProcess = queue.shift();
+          const execTime = Math.min(quantum, currentProcess.remainingTime);
+          
+          ganttChart.push({
+            process: currentProcess.id,
+            start: time,
+            end: time + execTime
+          });
+          
+          currentProcess.executionSteps.push({
+            start: time,
+            end: time + execTime
+          });
+        }
+
+        // Execute current process
+        if (currentProcess) {
+          const execTime = Math.min(quantum, currentProcess.remainingTime);
+          currentProcess.remainingTime -= execTime;
+          time += execTime;
+
+          // If process isn't finished, add back to queue
+          if (currentProcess.remainingTime > 0) {
+            queue.push(currentProcess);
+            currentProcess = null;
+          }
+        } else {
+          // No process to run, advance time
+          time++;
+        }
+      }
+
+      // Calculate averages
+      const waitingTimes = processes.map(p => p.waitingTime);
+      const turnaroundTimes = processes.map(p => p.turnaroundTime);
+      const completionTimes = processes.map(p => p.completionTime);
+
+      const avgWaiting = waitingTimes.reduce((a, b) => a + b, 0) / processes.length;
+      const avgTurnaround = turnaroundTimes.reduce((a, b) => a + b, 0) / processes.length;
+      const avgCompletion = completionTimes.reduce((a, b) => a + b, 0) / processes.length;
+
+      // Sort processes by ID for consistent display
+      processes.sort((a, b) => parseInt(a.id.substring(1)) - parseInt(b.id.substring(1)));
+
+      return {
+        ganttChart,
+        processes,
+        avgWaiting,
+        avgTurnaround,
+        avgCompletion,
+        quantum
+      };
+    }
+
+    function calculateWaitingTime(process) {
+      if (process.executionSteps.length === 0) return 0;
+      
+      let waitingTime = process.executionSteps[0].start - process.arrivalTime;
+      
+      for (let i = 1; i < process.executionSteps.length; i++) {
+        waitingTime += (process.executionSteps[i].start - process.executionSteps[i-1].end);
+      }
+      
+      return waitingTime;
+    }
+
+    function displayResults(results) {
+      // Display Gantt Chart (Slide 1)
+      const ganttProcesses = document.getElementById('ganttProcesses');
+      const ganttTimes = document.getElementById('ganttTimes');
+      
+      // Clear previous content
+      ganttProcesses.innerHTML = '';
+      ganttTimes.innerHTML = '';
+      
+      // Add processes
+      results.ganttChart.forEach(item => {
+        const processCell = document.createElement('div');
+        processCell.className = 'gantt-process';
+        processCell.textContent = item.process;
+        ganttProcesses.appendChild(processCell);
+      });
+      
+      // Add initial time
+      const initialTime = document.createElement('div');
+      initialTime.className = 'gantt-time';
+      initialTime.textContent = '0';
+      ganttTimes.appendChild(initialTime);
+      
+      // Add end times
+      results.ganttChart.forEach(item => {
+        const timeCell = document.createElement('div');
+        timeCell.className = 'gantt-time';
+        timeCell.textContent = item.end.toFixed(1);
+        ganttTimes.appendChild(timeCell);
+      });
+
+      // Display Waiting Time Calculations (Slide 2)
+      let waitingTimeHtml = '';
+      results.processes.forEach(p => {
+        waitingTimeHtml += `<div class="calculation">
+          <strong>${p.id}:</strong><br>`;
+        
+        if (p.executionSteps.length > 0) {
+          waitingTimeHtml += `= (${p.executionSteps[0].start.toFixed(1)} - ${p.arrivalTime.toFixed(1)})`;
+          
+          for (let i = 1; i < p.executionSteps.length; i++) {
+            waitingTimeHtml += ` + (${p.executionSteps[i].start.toFixed(1)} - ${p.executionSteps[i-1].end.toFixed(1)})`;
+          }
+          
+          waitingTimeHtml += `<br>= <span class="answer">${p.waitingTime.toFixed(1)} msec</span>`;
+        } else {
+          waitingTimeHtml += `= <span class="answer">0 msec</span> (no execution needed)`;
+        }
+        
+        waitingTimeHtml += `</div>`;
+      });
+      
+      waitingTimeHtml += `<div class="calculation" style="background: #2a9d8f; color: white;">
+        <strong>Average Waiting Time:</strong> <span class="answer">${results.avgWaiting.toFixed(2)} msec</span>
+      </div>`;
+      
+      document.getElementById('waitingTimeCalc').innerHTML = waitingTimeHtml;
+
+      // Display Completion Time (Slide 3)
+      let completionHtml = '';
+      results.processes.forEach(p => {
+        completionHtml += `<div class="calculation">
+          ${p.id} = <span class="answer">${p.completionTime.toFixed(1)} msec</span>
+        </div>`;
+      });
+      
+      completionHtml += `<div class="calculation" style="background: #2a9d8f; color: white;">
+        <strong>Average Completion Time:</strong> <span class="answer">${results.avgCompletion.toFixed(2)} msec</span>
+      </div>`;
+      
+      document.getElementById('completionTime').innerHTML = completionHtml;
+
+      // Display Turnaround Time (Slide 4)
+      let turnaroundHtml = '';
+      results.processes.forEach(p => {
+        turnaroundHtml += `<div class="calculation">
+          ${p.id} = ${p.completionTime.toFixed(1)} - ${p.arrivalTime.toFixed(1)} = <span class="answer">${p.turnaroundTime.toFixed(1)} msec</span>
+        </div>`;
+      });
+      
+      turnaroundHtml += `<div class="calculation" style="background: #2a9d8f; color: white;">
+        <strong>Average Turnaround Time:</strong> <span class="answer">${results.avgTurnaround.toFixed(2)} msec</span>
+      </div>`;
+      
+      document.getElementById('turnaroundTime').innerHTML = turnaroundHtml;
+
+      // Display Summary (Slide 5)
+      let summaryHtml = `
+        <h3>Process Summary</h3>
+        <table>
+          <tr>
+            <th>Process</th>
+            <th>Arrival</th>
+            <th>Burst</th>
+            <th>Completion</th>
+            <th>Turnaround</th>
+            <th>Waiting</th>
+          </tr>`;
+      
+      results.processes.forEach(p => {
+        summaryHtml += `<tr>
+          <td>${p.id}</td>
+          <td>${p.arrivalTime.toFixed(1)}</td>
+          <td>${p.burstTime.toFixed(1)}</td>
+          <td><span class="answer">${p.completionTime.toFixed(1)}</span></td>
+          <td><span class="answer">${p.turnaroundTime.toFixed(1)}</span></td>
+          <td><span class="answer">${p.waitingTime.toFixed(1)}</span></td>
+        </tr>`;
+      });
+      
+      summaryHtml += `</table>
+      
+      <h3>Average Times</h3>
+      <div class="summary-item">
+        Completion Time: <span class="answer">${results.avgCompletion.toFixed(2)} msec</span>
+      </div>
+      <div class="summary-item">
+        Turnaround Time: <span class="answer">${results.avgTurnaround.toFixed(2)} msec</span>
+      </div>
+      <div class="summary-item">
+        Waiting Time: <span class="answer">${results.avgWaiting.toFixed(2)} msec</span>
+      </div>`;
+      
+      document.getElementById('summaryResults').innerHTML = summaryHtml;
+    }
+  </script>
+</body>
+</html>
